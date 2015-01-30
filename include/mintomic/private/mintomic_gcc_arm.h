@@ -151,14 +151,88 @@ MINT_C_INLINE void mint_store_32_relaxed(mint_atomic32_t *object, uint32_t desir
 //----------------------------------------------
 //  64-bit atomic operations
 //----------------------------------------------
-// Defined in mintomic_gcc.c
-uint64_t mint_load_64_relaxed(const mint_atomic64_t *object);
-void mint_store_64_relaxed(mint_atomic64_t *object, uint64_t desired);
-uint64_t mint_compare_exchange_strong_64_relaxed(mint_atomic64_t *object, uint64_t expected, uint64_t desired);
-uint64_t mint_fetch_add_64_relaxed(mint_atomic64_t *object, int64_t operand);
-uint64_t mint_fetch_and_64_relaxed(mint_atomic64_t *object, uint64_t operand);
-uint64_t mint_fetch_or_64_relaxed(mint_atomic64_t *object, uint64_t operand);
+MINT_C_INLINE uint64_t mint_load_64_relaxed(mint_atomic64_t *object)
+{
+    uint64_t result;
 
+    asm volatile(
+    "   ldrexd  %0, %H0, [%1]"
+    : "=&r" (result)
+    : "r" (&object->_nonatomic), "Qo" (object->_nonatomic)
+    );
+
+    return result;
+}
+
+MINT_C_INLINE void mint_store_64_relaxed(mint_atomic64_t *object, uint64_t desired)
+{
+    uint64_t tmp;
+
+    asm volatile(
+    "1: ldrexd  %0, %H0, [%2]\n"
+    "   strexd  %0, %3, %H3, [%2]\n"
+    "   teq %0, #0\n"
+    "   bne 1b"
+    : "=&r" (tmp), "=Qo" (object->_nonatomic)
+    : "r" (&object->_nonatomic), "r" (desired)
+    : "cc");
+}
+
+MINT_C_INLINE uint64_t mint_compare_exchange_strong_64_relaxed(mint_atomic64_t *object, uint64_t expected, uint64_t desired)
+{
+    uint64_t expectedval;
+    uint32_t res;
+
+    do {
+        asm volatile(
+        "ldrexd     %1, %H1, [%3]\n"
+        "mov        %0, #0\n"
+        "teq        %1, %4\n"
+        "teqeq      %H1, %H4\n"
+        "strexdeq   %0, %5, %H5, [%3]"
+        : "=&r" (res), "=&r" (expectedval), "+Qo" (object->_nonatomic)
+        : "r" (&object->_nonatomic), "r" (expected), "r" (desired)
+        : "cc");
+    } while (res);
+
+    return expectedval;
+}
+
+MINT_C_INLINE uint64_t mint_fetch_add_64_relaxed(mint_atomic64_t *object, int64_t operand)
+{
+    // This implementation generates an unnecessary cmp instruction after the compare-exchange.
+    // Could be optimized further using inline assembly.
+    for (;;)
+    {
+        uint64_t original = object->_nonatomic;
+        if (mint_compare_exchange_strong_64_relaxed(object, original, original + operand) == original)
+            return original;
+    }
+}
+
+MINT_C_INLINE uint64_t mint_fetch_and_64_relaxed(mint_atomic64_t *object, uint64_t operand)
+{
+    // This implementation generates an unnecessary cmp instruction after the compare-exchange.
+    // Could be optimized further using inline assembly.
+    for (;;)
+    {
+        uint64_t original = object->_nonatomic;
+        if (mint_compare_exchange_strong_64_relaxed(object, original, original & operand) == original)
+            return original;
+    }
+}
+
+MINT_C_INLINE uint64_t mint_fetch_or_64_relaxed(mint_atomic64_t *object, uint64_t operand)
+{
+    // This implementation generates an unnecessary cmp instruction after the compare-exchange.
+    // Could be optimized further using inline assembly.
+    for (;;)
+    {
+        uint64_t original = object->_nonatomic;
+        if (mint_compare_exchange_strong_64_relaxed(object, original, original | operand) == original)
+            return original;
+    }
+}
 
 #ifdef __cplusplus
 } // extern "C"

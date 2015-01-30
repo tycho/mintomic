@@ -18,6 +18,13 @@ elseif(${UNIX})
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif()
 
+if(CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^arm.*$")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wa,-mimplicit-it=always")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wa,-mimplicit-it=always")
+endif()
+endif()
+
 if(${IOS})
     set(CMAKE_XCODE_EFFECTIVE_PLATFORMS "-iphoneos;-iphonesimulator")
     set_target_properties(${PROJECT_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer")
