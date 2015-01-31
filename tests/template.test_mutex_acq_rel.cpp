@@ -46,7 +46,7 @@ bool ${TEST_FUNC}(int numThreads)
     ThreadSynchronizer threads(numThreads);
     threads.run(threadFunc);
     bool success = (g_sharedValue == (uint${TEST_INT_BITSIZE}_t) 5000000 * numThreads);
-    if (!success)
-        printf(" g_sharedValue=%llu", (uint64_t) g_sharedValue);
+    //if (!success)
+    //    printf(" g_sharedValue=%llu", (uint64_t) g_sharedValue);
     return success;
 }
