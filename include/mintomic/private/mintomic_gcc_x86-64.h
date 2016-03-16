@@ -155,9 +155,8 @@ MINT_C_INLINE uint32_t mint_fetch_or_32_relaxed(mint_atomic32_t *object, uint32_
     MINT_C_INLINE uint64_t mint_compare_exchange_strong_64_relaxed(mint_atomic64_t *object, uint64_t expected, uint64_t desired)
     {
         // On x64, we can work with 64-bit values directly.
-        // It's basically the same as the 32-bit versions except for the q suffix on opcodes.
         uint64_t original;
-        asm volatile("lock; cmpxchgq %2, %1"
+        asm volatile("lock; cmpxchg  %2, %1"
                      : "=a"(original), "+m"(object->_nonatomic)
                      : "q"(desired), "0"(expected));
         return original;
@@ -175,7 +174,7 @@ MINT_C_INLINE uint32_t mint_fetch_or_32_relaxed(mint_atomic32_t *object, uint32_
     MINT_C_INLINE uint64_t mint_fetch_add_64_relaxed(mint_atomic64_t *object, int64_t operand)
     {
         uint64_t original;
-        asm volatile("lock; xaddq %0, %1"
+        asm volatile("lock; xadd  %0, %1"
                      : "=r"(original), "+m"(object->_nonatomic)
                      : "0"(operand));
         return original;
@@ -185,10 +184,10 @@ MINT_C_INLINE uint32_t mint_fetch_or_32_relaxed(mint_atomic32_t *object, uint32_
     {
         uint64_t original;
         register uint64_t temp;
-        asm volatile("1:     movq    %1, %0\n"
-                     "       movq    %0, %2\n"
-                     "       andq    %3, %2\n"
-                     "       lock; cmpxchgq %2, %1\n"
+        asm volatile("1:     mov     %1, %0\n"
+                     "       mov     %0, %2\n"
+                     "       and     %3, %2\n"
+                     "       lock; cmpxchg  %2, %1\n"
                      "       jne     1b"
                      : "=&a"(original), "+m"(object->_nonatomic), "=&r"(temp)
                      : "r"(operand));
@@ -199,10 +198,10 @@ MINT_C_INLINE uint32_t mint_fetch_or_32_relaxed(mint_atomic32_t *object, uint32_
     {
         uint64_t original;
         register uint64_t temp;
-        asm volatile("1:     movq    %1, %0\n"
-                     "       movq    %0, %2\n"
-                     "       orq     %3, %2\n"
-                     "       lock; cmpxchgq %2, %1\n"
+        asm volatile("1:     mov     %1, %0\n"
+                     "       mov     %0, %2\n"
+                     "       or      %3, %2\n"
+                     "       lock; cmpxchg  %2, %1\n"
                      "       jne     1b"
                      : "=&a"(original), "+m"(object->_nonatomic), "=&r"(temp)
                      : "r"(operand));
