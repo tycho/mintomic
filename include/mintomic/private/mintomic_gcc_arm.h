@@ -188,6 +188,9 @@ MINT_C_INLINE uint64_t mint_compare_exchange_strong_64_relaxed(mint_atomic64_t *
         "ldrexd     %1, %H1, [%3]\n"
         "mov        %0, #0\n"
         "teq        %1, %4\n"
+        #if MINT_CPU_ARM_THUMB && (MINT_CPU_ARM_VERSION != 6)
+        "itt        eq\n"
+        #endif
         "teqeq      %H1, %H4\n"
         "strexdeq   %0, %5, %H5, [%3]"
         : "=&r" (res), "=&r" (expectedval), "+Qo" (object->_nonatomic)
