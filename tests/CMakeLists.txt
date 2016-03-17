@@ -3,6 +3,16 @@ set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE INTERNAL "" FORCE)
 project(MintomicTests)
 option(MINT_HAS_EXCHANGE "Include tests for atomic exchange" OFF)
 
+macro(GetFilesWithSourceGroups GLOB_TYPE VARIABLE RELATIVE_TO)
+    file(${GLOB_TYPE} files ${ARGN})
+    foreach(file ${files})
+        file(RELATIVE_PATH relFile ${RELATIVE_TO} ${file})
+        get_filename_component(folder ${relFile} PATH)
+        string(REPLACE / \\ folder "${folder}")
+        source_group("${folder}" FILES ${file})
+    endforeach()
+    list(APPEND ${VARIABLE} ${files})
+endmacro()
 
 #------------------------------------------
 # Define all the tests
@@ -47,7 +57,7 @@ function(AddMintomicTests template)
             endif()
 
             set(TEST_FUNC test_${template}_${TEST_INT_BITSIZE}${status}${EXTRA_SUFFIX})
-            configure_file(template.test_${template}.cpp ${CMAKE_CURRENT_SOURCE_DIR}/generated.${TEST_FUNC}.cpp)
+            configure_file(template.test_${template}.cpp generated/${TEST_FUNC}.cpp)
 
             set(TEST_ENTRY_FUNCS "${TEST_ENTRY_FUNCS}TestEntryFunc ${TEST_FUNC};\n")
             foreach(numThreads IN ITEMS ${THREAD_COUNTS})
@@ -75,26 +85,22 @@ AddMintomicTests(mutex_acq_rel  VAR_THREAD VAR_SIZE ALLOW_FAIL)
 AddMintomicTests(pthread_mutex  VAR_THREAD VAR_SIZE ALLOW_FAIL)
 AddMintomicTests(storeload      DUAL_THREAD ALLOW_FAIL)
 AddMintomicTests(linkedlist     VAR_THREAD VAR_SIZE)
-configure_file(template.main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/generated.main.cpp)
+configure_file(template.main.cpp generated/main.cpp)
 
+set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "generated")
 
 #------------------------------------------
 # Configure the executable and all its dependencies
 #------------------------------------------
+GetFilesWithSourceGroups(GLOB_RECURSE PROJECT_FILES ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/generated/*.cpp ${CMAKE_CURRENT_BINARY_DIR}/generated/*.h)
+GetFilesWithSourceGroups(GLOB TEMPLATE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR} *.cpp.in)
+list(APPEND PROJECT_FILES ${TEMPLATE_SOURCES})
+
+# Define executable target.
 set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.mycompany.\${PRODUCT_NAME:identifier}")
-file(GLOB all_sources *.cpp)
-set(sources)
-set(generated_sources)
-foreach(file IN LISTS all_sources)
-    if(file MATCHES .*generated\\.[^/]*\\.cpp)
-        list(APPEND generated_sources ${file})
-    else()
-        list(APPEND sources ${file})
-    endif()
-endforeach()
-source_group("Source Files\\generated" FILES ${generated_sources})
-set_source_files_properties(${sources} PROPERTIES HEADER_FILE_ONLY TRUE)
-add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${all_sources})
+add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${PROJECT_FILES})
+set_target_properties(${PROJECT_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer")
+
 include(../cmake/BuildSettings.cmake)
 
 # Add subdirectories with dependencies before dependents so that each subdirectory
