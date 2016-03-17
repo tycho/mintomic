@@ -40,11 +40,17 @@ static void threadFunc(int threadNum)
 
 bool ${TEST_FUNC}(int numThreads)
 {
+    pthread_mutexattr_t attr;
+
     assert(numThreads <= 4);
 
     g_flag._nonatomic = 0;
     g_sharedValue = 0;
-    pthread_mutex_init(&g_lock, NULL);
+
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
+    pthread_mutex_init(&g_lock, &attr);
+
     ThreadSynchronizer threads(numThreads);
     threads.run(threadFunc);
     bool success = (g_sharedValue == (uint${TEST_INT_BITSIZE}_t) 5000000 * numThreads);
