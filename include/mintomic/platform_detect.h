@@ -2,7 +2,7 @@
 #define __MINTOMIC_PLATFORM_DETECT_H__
 
 
-#if defined(_WIN32)
+#if defined(_MSC_VER)
     // MSVC compiler family
     #define MINT_COMPILER_MSVC 1
     #if _MSC_VER >= 1600
@@ -23,6 +23,11 @@
             // x86
             #define MINT_CPU_X86 1
             #define MINT_PTR_SIZE 4
+        #elif defined(_M_ARM64)
+            // arm64
+            #define MINT_CPU_ARM 1
+            #define MINT_CPU_ARM_VERSION 8
+            #define MINT_PTR_SIZE 8
         #else
             #error Unrecognized platform!
         #endif

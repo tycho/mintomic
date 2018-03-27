@@ -15,6 +15,8 @@ MINT_C_INLINE mint_tid_t mint_get_current_thread_id()
 {
 #if MINT_TARGET_XBOX_360  // Xbox 360
     return GetCurrentThreadId();
+#elif MINT_CPU_ARM        // Windows ARM64
+    return GetCurrentThreadId();
 #elif MINT_CPU_X64        // Windows x64
     return ((uint32_t*) __readgsqword(48))[18]; // Read directly from the TIB
 #elif MINT_CPU_X86        // Windows x86
@@ -32,6 +34,8 @@ MINT_C_INLINE mint_pid_t mint_get_current_process_id()
 {
 #if MINT_TARGET_XBOX_360  // Xbox 360
     return 0;
+#elif MINT_CPU_ARM        // Windows ARM64
+    return GetCurrentProcessId();
 #elif MINT_CPU_X64        // Windows x64
     return ((uint32_t*) __readgsqword(48))[16]; // Read directly from the TIB
 #elif MINT_CPU_X86        // Windows x86
